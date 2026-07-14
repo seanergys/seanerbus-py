@@ -1,0 +1,39 @@
+stages:
+  - prebuild
+  - build
+  - test
+  - docs
+  - end_to_end
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+variables:
+  CARGO_HOME: "$CI_PROJECT_DIR/.cargo"
+  CARGO_INCREMENTAL: 0
+  DOCKER_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_COMMIT_REF_SLUG
+  DOCKER_IMAGE_TAG: $CI_COMMIT_SHA
+  GIT_SUBMODULE_FORCE_HTTPS: "true"
+  GIT_SUBMODULE_STRATEGY: recursive
+
+reuse-lint:
+  stage: prebuild
+  image: python:latest
+  script:
+    - pip install reuse
+    - reuse lint
+
+build-python:
+  image: python:latest
+  stage: build
+  script:
+    - apt-get update && apt-get install -y cmake capnproto libcapnp-dev
+    - pip install .
+
+test:ruff-format:
+  image: python:latest
+  stage: test
+  script:
+    - pip install ruff
+    - ruff format --check

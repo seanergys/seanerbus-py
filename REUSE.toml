@@ -1,0 +1,13 @@
+version = 1
+
+[[annotations]]
+
+path = [
+".gitmodules",
+"src/seanerbus/client/.gitignore",
+"src/seanerbus/client/internal.capnp",
+".gitlab-ci.yml",
+"README.md"
+   ]
+SPDX-FileCopyrightText = "2026 SEANERGYS Partners <https://seanergys.eu>"
+SPDX-License-Identifier = "MIT"
