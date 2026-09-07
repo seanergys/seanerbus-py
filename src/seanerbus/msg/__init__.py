@@ -383,38 +383,38 @@ class RegisterResolveReqV1:
         return (msg_capnp.MessageTypes.registerResolveReqV1, msg.to_bytes())
 
 
-class RegisterResolveResV1:
-    """A response payload for registering a new name"""
+class ErrorResV1:
+    """A response payload for signalling errors"""
 
-    def __init__(self, success: bool, err_msg: str):
-        """Creates a new RegisterResolveResV1 from the success status and if the register was not successful, an error message"""
-        self.success: bool = success
-        self.err_msg: str = err_msg
+    def __init__(self, error_code, what):
+        """Creates a new ErrorResV1 from the error_code and optionally an error message"""
+        self.error_code = error_code
+        self.what: str = what
 
     @staticmethod
     def from_capnp(msg):
-        """Decodes the given message (as returned by Connection.read_msg() as a RegisterResolveResV1"""
-        res = RegisterResolveResV1(True, "")
+        """Decodes the given message (as returned by Connection.read_msg() as a ErrorResV1"""
+        res = ErrorResV1(msg_capnp.ErrorCodeV1.ok, "")
 
-        if msg.payloadType != msg_capnp.MessageTypes.registerResolveResV1:
+        if msg.payloadType != msg_capnp.MessageTypes.errorResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as RegisterResolveResV1!"
+                f"Can not interpret message of type {msg.payloadType} as ErrorResV1!"
             )
 
-        with msg_capnp.RegisterResolveResV1.from_bytes(msg.payload) as req:
-            res.success = req.success
-            res.err_msg = req.errMsg
+        with msg_capnp.ErrorResV1.from_bytes(msg.payload) as req:
+            res.error_code = req.errorCode
+            res.what = req.what
 
         return res
 
     def to_capnp(self) -> tuple[int, bytes]:
-        """Encodes this RegisterResolveResV1 as a Cap'n Proto payload"""
-        msg = msg_capnp.RegisterResolveResV1.new_message()
+        """Encodes this ErrorResV1 as a Cap'n Proto payload"""
+        msg = msg_capnp.ErrorResV1.new_message()
 
-        msg.success = self.success
-        msg.errMsg = self.err_msg
+        msg.errorCode = self.error_code
+        msg.what = self.what
 
-        return (msg_capnp.MessageTypes.registerResolveResV1, msg.to_bytes())
+        return (msg_capnp.MessageTypes.errorResV1, msg.to_bytes())
 
 
 class UnregisterResolveReqV1:
@@ -445,40 +445,6 @@ class UnregisterResolveReqV1:
         msg.address.upper = upper
         msg.address.lower = lower
         return (msg_capnp.MessageTypes.unregisterResolveReqV1, msg.to_bytes())
-
-
-class UnregisterResolveResV1:
-    """A response payload to a unregistering request"""
-
-    def __init__(self, success: bool, err_msg: str):
-        """Creates a new UnregisterResolveResV1 with the given success status and if not successful, error message"""
-        self.success: bool = success
-        self.err_msg: str = err_msg
-
-    @staticmethod
-    def from_capnp(msg):
-        """Decodes the given message (as returned by Connection.read_msg() as a UnregisterResolveResV1"""
-        res = UnregisterResolveResV1(None, None)
-
-        if msg.payloadType != msg_capnp.MessageTypes.unregisterResolveResV1:
-            raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as UnregisterResolveResV1!"
-            )
-
-        with msg_capnp.UnregisterResolveResV1.from_bytes(msg.payload) as req:
-            res.success = req.success
-            res.err_msg = req.errMsg
-
-        return res
-
-    def to_capnp(self) -> tuple[int, bytes]:
-        """Encodes this UnregisterResolveResV1 as a Cap'n Proto payload"""
-        msg = msg_capnp.UnregisterResolveResV1.new_message()
-
-        msg.success = self.success
-        msg.errMsg = self.errMsg
-
-        return (msg_capnp.MessageTypes.unregisterResolveResV1, msg.to_bytes())
 
 
 class HistoryReqV1:
@@ -519,7 +485,7 @@ class HistoryReqV1:
             res.start_time = req.startTime
             res.end_time = req.endTime
             res.interval_max = req.intervalMax
-            res.history_type = req.type
+            res.history_type = req.historyType
 
         return res
 
@@ -532,7 +498,7 @@ class HistoryReqV1:
         msg.startTime = self.start_time
         msg.endTime = self.end_time
         msg.intervalMax = self.interval_max
-        msg.type = self.history_type
+        msg.historyType = self.history_type
 
         return (msg_capnp.MessageTypes.historyReqV1, msg.to_bytes())
 
@@ -637,16 +603,7 @@ class HistoryResV1:
     """A response payload for a request for historic time-series data"""
 
     def __init__(self):
-        self.type: str
-        self.err_msg: str
         self.hist: History
-
-    @staticmethod
-    def make_error(err_msg: str) -> "HistoryResV1":
-        ret = HistoryResV1()
-        ret.type = "error"
-        ret.err_msg = err_msg
-        return ret
 
     @staticmethod
     def from_capnp(msg) -> "HistoryResV1":
@@ -657,18 +614,8 @@ class HistoryResV1:
             )
 
         with msg_capnp.HistoryResV1.from_bytes(msg.payload) as res:
-            which = res.okOrErr.which()
-
-            if which == "err":
-                ret.err_msg = res.okOrErr.err
-                ret.type = "error"
-            else:
-                ret.type = "ok"
-                ret.hist = History.from_capnp(res.okOrErr.ok)
+            ret.hist = History.from_capnp(res.hist)
         return ret
-
-    def is_error(self) -> bool:
-        return self.type == "error"
 
 
 class FluxClassifyJobReqV1:
