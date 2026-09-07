@@ -417,6 +417,94 @@ class ErrorResV1:
         return (msg_capnp.MessageTypes.errorResV1, msg.to_bytes())
 
 
+class GetReqV1:
+    """A request for requesting singular numeric values"""
+
+    def __init__(self):
+        """Creates a new GetReqV1"""
+
+    @staticmethod
+    def from_capnp(msg):
+        """Decodes the given message (as returned by Connection.read_msg() as a GetReqV1"""
+        res = GetReqV1()
+
+        if msg.payloadType != msg_capnp.MessageTypes.getReqV1:
+            raise RuntimeError(
+                f"Can not interpret message of type {msg.payloadType} as GetReqV1!"
+            )
+
+        with msg_capnp.GetReqV1.from_bytes(msg.payload) as req:
+            pass
+
+        return res
+
+    def to_capnp(self) -> tuple[int, bytes]:
+        """Encodes this GetReqV1 as a Cap'n Proto payload"""
+        msg = msg_capnp.GetReqV1.new_message()
+
+        return (msg_capnp.MessageTypes.getReqV1, msg.to_bytes())
+
+
+class GetResV1:
+    """A response to requesting singular numeric values"""
+
+    def __init__(self, value: int):
+        self.value: int = value
+        """Creates a new GetResV1 from the value that is responded to the get request"""
+
+    @staticmethod
+    def from_capnp(msg):
+        """Decodes the given message (as returned by Connection.read_msg() as a GetResV1"""
+        res = GetResV1(0)
+
+        if msg.payloadType != msg_capnp.MessageTypes.getResV1:
+            raise RuntimeError(
+                f"Can not interpret message of type {msg.payloadType} as GetResV1!"
+            )
+
+        with msg_capnp.GetResV1.from_bytes(msg.payload) as req:
+            self.value = req.value
+
+        return res
+
+    def to_capnp(self) -> tuple[int, bytes]:
+        """Encodes this GetResV1 as a Cap'n Proto payload"""
+        msg = msg_capnp.GetResV1.new_message()
+
+        msg.value = self.value
+        return (msg_capnp.MessageTypes.getResV1, msg.to_bytes())
+
+
+class SetReqV1:
+    """A request for setting a value"""
+
+    def __init__(self, value: int):
+        self.value: int = value
+        """Creates a new SetReqV1 from the value that is requested to be set"""
+
+    @staticmethod
+    def from_capnp(msg):
+        """Decodes the given message (as returned by Connection.read_msg() as a SetReqV1"""
+        res = SetReqV1(0)
+
+        if msg.payloadType != msg_capnp.MessageTypes.setReqV1:
+            raise RuntimeError(
+                f"Can not interpret message of type {msg.payloadType} as SetReqV1!"
+            )
+
+        with msg_capnp.SetReqV1.from_bytes(msg.payload) as req:
+            self.value = req.value
+
+        return res
+
+    def to_capnp(self) -> tuple[int, bytes]:
+        """Encodes this SetReqV1 as a Cap'n Proto payload"""
+        msg = msg_capnp.SetReqV1.new_message()
+
+        msg.value = self.value
+        return (msg_capnp.MessageTypes.setReqV1, msg.to_bytes())
+
+
 class UnregisterResolveReqV1:
     """A request payload for unregistering an addr to name mapping"""
 
