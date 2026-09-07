@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from ..client import Connection
-from ..msg import Aggregate, HistoryReqV1, HistoryResV1, History
+from ..msg import Aggregate, HistoryReqV1, HistoryResV1, History, msg_capnp, ErrorResV1
 from ..naming import resolve
 import uuid
 
@@ -28,19 +28,16 @@ async def get_aggregate(
 
     db_addr = db_addr[0]
 
-    res = HistoryResV1.from_capnp(
-        await conn.request(
-            db_addr,
-            HistoryReqV1(
-                addr, start_time, end_time, interval_max, "aggregate"
-            ).to_capnp(),
-        )
+    response = await conn.request(
+        db_addr,
+        HistoryReqV1(addr, start_time, end_time, interval_max, "aggregate").to_capnp(),
     )
 
-    if res.is_error():
-        raise RuntimeError(
-            f"Could not retrieve aggregate value for: {addr}: {res.err_msg}"
-        )
+    if response.payloadType == msg_capnp.MessageTypes.errorResV1:
+        err = ErrorResV1.from_capnp(response)
+        raise RuntimeError("Could not get History Aggregate: " + err.what)
+
+    res = HistoryResV1.from_capnp(response)
 
     if res.hist.type == "aggregate":
         return res.hist.aggr[0]
@@ -68,18 +65,16 @@ async def get_timeline(
 
     db_addr = db_addr[0]
 
-    res = HistoryResV1.from_capnp(
-        await conn.request(
-            db_addr,
-            HistoryReqV1(
-                addr, start_time, end_time, interval_max, "flexTimeline"
-            ).to_capnp(),
-        )
+    response = await conn.request(
+        db_addr,
+        HistoryReqV1(
+            addr, start_time, end_time, interval_max, "flexTimeline"
+        ).to_capnp(),
     )
 
-    if res.is_error():
-        raise RuntimeError(
-            f"Could not retrieve aggregate value for: {addr}: {res.err_msg}"
-        )
+    if response.payloadType == msg_capnp.MessageTypes.errorResV1:
+        err = ErrorResV1.from_capnp(response)
+        raise RuntimeError("Could not get History Timeline: " + err.what)
+    res = HistoryResV1.from_capnp(response)
 
     return res.hist
