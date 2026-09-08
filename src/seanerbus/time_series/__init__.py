@@ -21,16 +21,18 @@ async def get_aggregate(
     :param start_time: Start of the interval
     :param end_time: End of the interval
     :param interval_max: TODO: Document. Leave on 0 for now"""
-    db_addr = await resolve({"service": "time_series_db"})
+    db_addr = await resolve(conn, {"service": "time_series_db"})
 
     if not db_addr:
         raise RuntimeError("Time-series Database is not online!")
 
-    db_addr = db_addr[0]
+    db_addr = str(db_addr[0])
 
     handle = await conn.request(
         db_addr,
-        HistoryReqV1(addr, start_time, end_time, interval_max, "aggregate").to_capnp(),
+        HistoryReqV1(
+            uuid.UUID(addr), start_time, end_time, interval_max, "aggregate"
+        ).to_capnp(),
     )
 
     response = await handle()
@@ -48,7 +50,7 @@ async def get_aggregate(
 
 async def get_timeline(
     conn: Connection,
-    addr: uuid.UUID,
+    addr: str,
     start_time: int,
     end_time: int,
     interval_max: int = 0,
@@ -59,21 +61,22 @@ async def get_timeline(
     :param start_time: Start of the interval
     :param end_time: End of the interval
     :param interval_max: TODO: Document. Leave on 0 for now"""
-    db_addr = await resolve({"service": "time_series_db"})
+    db_addr = await resolve(conn, {"service": "time_series_db"})
 
     if not db_addr:
         raise RuntimeError("Time-series Database is not online!")
 
-    db_addr = db_addr[0]
+    db_addr = str(db_addr[0])
 
-    response = await conn.request(
+    handle = await conn.request(
         db_addr,
         HistoryReqV1(
-            addr, start_time, end_time, interval_max, "flexTimeline"
+            uuid.UUID(addr), start_time, end_time, interval_max, "flexTimeline"
         ).to_capnp(),
     )
+    response = await handle()
 
-    if response.payloadType == msg_capnp.MessageTypes.errorResV1:
+    if response.payload_type_as_int() == msg_capnp.MessageTypes.errorResV1:
         err = ErrorResV1.from_capnp(response)
         raise RuntimeError("Could not get History Timeline: " + err.what)
     res = HistoryResV1.from_capnp(response)

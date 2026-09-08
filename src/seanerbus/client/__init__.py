@@ -83,7 +83,7 @@ class Connection:
 
         return MsgHandle(q)
 
-    async def request(self, addr, payload: tuple[int, bytes]):
+    async def request(self, addr: str, payload: tuple[int, bytes]):
         """Publishes the payload to the given address"""
         msg = None
         if isinstance(addr, str):
