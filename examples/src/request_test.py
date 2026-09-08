@@ -7,21 +7,20 @@ import seanerbus.client
 from seanerbus.msg import HelloWorldReqV1, HelloWorldResV1
 import capnp
 import asyncio
-import uuid
 import sys
 
 
 async def main():
     # Connect to the SeanerBUS
-    c = await seanerbus.client.Connection.connect("localhost", 5398)
+    c = seanerbus.client.Connection(
+        "demobus://localhost:5398", "demobus://localhost:5398"
+    )
 
     # Send a HelloWorldReqV1 to the UUID given on the command line.
     # Interpret the result as a HelloWorldResV1
-    msg = HelloWorldResV1.from_capnp(
-        await c.request(
-            uuid.UUID(sys.argv[1]), HelloWorldReqV1("Hello World").to_capnp()
-        )
-    )
+    handle = await c.request(sys.argv[1], HelloWorldReqV1("Hello World").to_capnp())
+
+    msg = HelloWorldResV1.from_capnp(await handle())
 
     print(f"Got a Response: {msg.msg}")
 

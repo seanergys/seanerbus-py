@@ -4,96 +4,108 @@
 
 import capnp
 import os
-import uuid
-import random
+import seanerbus_cpp_py
+import asyncio
 
 capnp.remove_import_hook()
 msg_capnp = capnp.load(os.path.dirname(os.path.abspath(__file__)) + "/internal.capnp")
 
 
-def uuid_to_u64_pair(uuid: uuid.UUID) -> tuple[int, int]:
-    upper = uuid.int >> 64
-    lower = uuid.int & (1 << 64) - 1
-    return (upper, lower)
+def conn_handler(conn: seanerbus_cpp_py.Connection):
+    conn.handle()
+
+
+class MsgHandle:
+    def __init__(self, queue: asyncio.Queue):
+        self.queue = queue
+
+    async def __call__(self):
+        res = await self.queue.get()
+
+        if not res.ok():
+            raise RuntimeError(res.unwrap_error().what())
+        return res.unwrap_ok()
 
 
 class Connection:
     """A connection to the dataplane"""
 
-    def __init__(self):
-        pass
-
-    @staticmethod
-    async def connect(host: str, port: int):
-        """Connects to the seanerbus at host and port, returns an open connection"""
-        conn: Connection = Connection()
-
-        conn.stream: capnp.AsyncIoStream = await capnp.AsyncIoStream.create_connection(
-            host=host, port=port
+    def __init__(self, pub_sub_endpoint, req_res_endpoint):
+        self.conn: seanerbus_cpp_py.Connection = seanerbus_cpp_py.Connection(
+            pub_sub_endpoint, req_res_endpoint
         )
-        return conn
+        asyncio.get_event_loop().add_reader(
+            self.conn.get_fd(), lambda: conn_handler(self.conn)
+        )
 
-    async def subscribe(self, subscribe_to: uuid.UUID):
+    async def subscribe(self, subscribe_to: seanerbus_cpp_py.Address):
         """Subscribes to publish messages from the address subscribe_to.
         When messages are published to this address, they will be forwarded to this client and can be read with read_msg()"""
-        msg = msg_capnp.Message.new_message()
-        (upper, lower) = uuid_to_u64_pair(subscribe_to)
-        msg.address.upper = upper
-        msg.address.lower = lower
-        msg.type = "subscribe"
-        msg.payloadType = 0
-        msg.payload = b""
-        await msg.write_async(self.stream)
+        q = asyncio.Queue()
+        if isinstance(subscribe_to, str):
+            self.conn.subscribe(
+                seanerbus_cpp_py.Address(subscribe_to),
+                lambda conn, msg: q.put_nowait(msg),
+            )
+        else:
+            self.conn.subscribe(subscribe_to, lambda conn, msg: q.put_nowait(msg))
 
-    async def register(self, register_to: uuid.UUID):
+        return MsgHandle(q)
+
+    async def register_endpoint(self, register_to):
         """Registers a req/res service at register_to. requests to this address will be then forwarded to this client"""
-        msg = msg_capnp.Message.new_message()
-        (upper, lower) = uuid_to_u64_pair(register_to)
-        msg.address.upper = upper
-        msg.address.lower = lower
-        msg.type = "register"
-        msg.payloadType = 0
-        msg.payload = b""
-        await msg.write_async(self.stream)
 
-    async def publish(self, addr: uuid.UUID, payload: tuple[int, bytes]):
+        q = asyncio.Queue()
+        if isinstance(register_to, str):
+            self.conn.register_endpoint(
+                seanerbus_cpp_py.Address(register_to),
+                lambda conn, msg: q.put_nowait(msg),
+            )
+        else:
+            self.conn.register_endpoint(
+                register_to, lambda conn, msg: q.put_nowait(msg)
+            )
+
+        return MsgHandle(q)
+
+    async def publish(self, addr, payload: tuple[int, bytes]):
         """Publishes the payload to the given address"""
-        msg = msg_capnp.Message.new_message()
-        (upper, lower) = uuid_to_u64_pair(addr)
-        msg.address.upper = upper
-        msg.address.lower = lower
-        msg.type = "publish"
-        msg.payloadType = payload[0]
-        msg.payload = payload[1]
-        await msg.write_async(self.stream)
+        msg = None
+        if isinstance(addr, str):
+            msg = seanerbus_cpp_py.Message(
+                seanerbus_cpp_py.Address(addr), payload[0], payload[1]
+            )
+        else:
+            msg = seanerbus_cpp_py.Message(addr, payload[0], payload[1])
+        q = asyncio.Queue()
 
-    async def request(self, addr: uuid.UUID, payload: tuple[int, bytes]):
-        """Performs a request to the given address with the given payloadType
-        This will block until a response has been received, which will then be returned to the user"""
-        msg = msg_capnp.Message.new_message()
-        (upper, lower) = uuid_to_u64_pair(addr)
-        msg.address.upper = upper
-        msg.address.lower = lower
-        msg.type = "request"
-        msg.payloadType = payload[0]
-        msg.payload = payload[1]
-        msg.matchingId = random.randint(0, ((1 << 64) - 1))
-        await msg.write_async(self.stream)
-        message = await msg_capnp.Message.read_async(self.stream)
-        return message
+        self.conn.publish(msg, lambda conn, res: q.put_nowait(res))
+
+        return MsgHandle(q)
+
+    async def request(self, addr, payload: tuple[int, bytes]):
+        """Publishes the payload to the given address"""
+        msg = None
+        if isinstance(addr, str):
+            msg = seanerbus_cpp_py.Message(
+                seanerbus_cpp_py.Address(addr), payload[0], payload[1]
+            )
+        else:
+            msg = seanerbus_cpp_py.Message(addr, payload[0], payload[1])
+        q = asyncio.Queue()
+
+        self.conn.request(msg, lambda conn, res: q.put_nowait(res))
+
+        return MsgHandle(q)
 
     async def respond_to(self, from_msg, payload: tuple[int, bytes]):
-        """Responds to the incoming message from_msg with the given payload"""
-        msg = msg_capnp.Message.new_message()
-        msg.address.upper = from_msg.address.upper
-        msg.address.lower = from_msg.address.lower
-        msg.type = "response"
-        msg.to.upper = getattr(from_msg, "from").upper
-        msg.to.lower = getattr(from_msg, "from").lower
-        msg.payloadType = payload[0]
-        msg.payload = payload[1]
-        msg.matchingId = from_msg.matchingId
-        await msg.write_async(self.stream)
+        """Publishes the payload to the given address"""
+        msg = seanerbus_cpp_py.Message(from_msg.address(), payload[0], payload[1])
+
+        q = asyncio.Queue()
+        self.conn.respond_to(from_msg, msg, lambda conn, res: q.put_nowait(res))
+
+        return MsgHandle(q)
 
     async def read_msg(self):
         """Reads a single message from the connection to the SeanerBUS

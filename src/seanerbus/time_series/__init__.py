@@ -10,7 +10,7 @@ import uuid
 
 async def get_aggregate(
     conn: Connection,
-    addr: uuid.UUID,
+    addr: str,
     start_time: int,
     end_time: int,
     interval_max: int = 0,
@@ -28,12 +28,13 @@ async def get_aggregate(
 
     db_addr = db_addr[0]
 
-    response = await conn.request(
+    handle = await conn.request(
         db_addr,
         HistoryReqV1(addr, start_time, end_time, interval_max, "aggregate").to_capnp(),
     )
 
-    if response.payloadType == msg_capnp.MessageTypes.errorResV1:
+    response = await handle()
+    if response.payload_type_as_int() == msg_capnp.MessageTypes.errorResV1:
         err = ErrorResV1.from_capnp(response)
         raise RuntimeError("Could not get History Aggregate: " + err.what)
 

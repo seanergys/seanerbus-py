@@ -7,21 +7,21 @@ import seanerbus.client
 from seanerbus.msg import TimeValueV1
 import capnp
 import asyncio
-import uuid
 import sys
 
 
 async def main():
     # Connect to the SeanerBUS
-    c = await seanerbus.client.Connection.connect("localhost", 5398)
+    c = seanerbus.client.Connection(
+        "demobus://localhost:5398", "demobus://localhost:5398"
+    )
 
     # Subscribe to the UUID given on the command line
-    await c.subscribe(uuid.UUID(sys.argv[1]))
+    handle = await c.subscribe(sys.argv[1])
 
     while True:
-        # read incoming messages from the bus, interpreting them as TimeValueV1's
-        tv = TimeValueV1.from_capnp(await c.read_msg())
-        print("time=", tv.time, "value=", tv.value)
+        tv = TimeValueV1.from_capnp(await handle())
+        print(tv.time, tv.value)
 
 
 if len(sys.argv) != 2:

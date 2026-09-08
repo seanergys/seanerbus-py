@@ -9,19 +9,21 @@ from seanerbus.msg import TimeValueV1
 import capnp
 from time import sleep
 import asyncio
-import uuid
 import sys
 
 
 async def main():
     # Connect to the SeanerBUS
-    c = await seanerbus.client.Connection.connect("localhost", 5398)
+    c = seanerbus.client.Connection(
+        "demobus://localhost:5398", "demobus://localhost:5398"
+    )
 
     time = 0
     value = 0.0
     while True:
         # Publish a TimeValueV1 to the UUID given on the command line
-        await c.publish(uuid.UUID(sys.argv[1]), TimeValueV1(time, value).to_capnp())
+        handle = await c.publish(sys.argv[1], TimeValueV1(time, value).to_capnp())
+        await handle()
         time = time + 1
         value = value + 1.0
         sleep(1)

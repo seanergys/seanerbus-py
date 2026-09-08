@@ -7,7 +7,7 @@ requires = ["setuptools"]
 
 [project]
 dependencies = [
-  "pycapnp"
+  "pycapnp", "seanerbus_cpp_py"
 ]
 
 name = "seanerbus"
@@ -24,6 +24,8 @@ where = ["src"]
 [tool.setuptools.package-data]
 seanerbus = ["client/internal.capnp", "msg/schemas/msg.capnp"]
 
+[tool.uv.sources]
+seanerbus_cpp_py = { git = "ssh://git@gitlab.seanergys.fz-juelich.de/software/seanerbus-cpp.git"}
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or

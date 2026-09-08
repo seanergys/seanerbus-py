@@ -30,11 +30,11 @@ class TimeValueV1:
     def from_capnp(msg):
         """Takes a message (as returned by Connection.read_msg() and decode it as TimeValueV1 returning it."""
         res = TimeValueV1(0, 0.0)
-        if msg.payloadType != msg_capnp.MessageTypes.timeValueV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.timeValueV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as TimeValueV1 message!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as TimeValueV1 message!"
             )
-        with msg_capnp.TimeValueV1.from_bytes(msg.payload) as tv:
+        with msg_capnp.TimeValueV1.from_bytes(msg.payload()) as tv:
             res.time = tv.time
             res.value = tv.value
         return res
@@ -59,12 +59,12 @@ class HelloWorldReqV1:
         """Decodes the given message (as returned by Connection.read_msg() as a HelloWorldReqV1"""
         res = HelloWorldReqV1("")
 
-        if msg.payloadType != msg_capnp.MessageTypes.helloWorldReqV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.helloWorldReqV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as HelloWorldReqV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as HelloWorldReqV1!"
             )
 
-        with msg_capnp.HelloWorldReqV1.from_bytes(msg.payload) as req:
+        with msg_capnp.HelloWorldReqV1.from_bytes(msg.payload()) as req:
             res.msg = req.msg
         return res
 
@@ -87,12 +87,12 @@ class HelloWorldResV1:
         """Decodes the given message (as returned by Connection.read_msg() as a HelloWorldResV1"""
         res = HelloWorldResV1("")
 
-        if msg.payloadType != msg_capnp.MessageTypes.helloWorldResV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.helloWorldResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as HelloWorldResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as HelloWorldResV1!"
             )
 
-        with msg_capnp.HelloWorldResV1.from_bytes(msg.payload) as req:
+        with msg_capnp.HelloWorldResV1.from_bytes(msg.payload()) as req:
             res.msg = req.msg
         return res
 
@@ -115,12 +115,12 @@ class ResolveReqV1:
         """Decodes the given message (as returned by Connection.read_msg() as a NamingServiceReqV1V1"""
         res = ResolveReqV1({})
 
-        if msg.payloadType != msg_capnp.MessageTypes.resolveReqV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.resolveReqV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as NamingServiceReqV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as NamingServiceReqV1!"
             )
 
-        with msg_capnp.ResolveReqV1.from_bytes(msg.payload) as req:
+        with msg_capnp.ResolveReqV1.from_bytes(msg.payload()) as req:
             for i in req.attributes:
                 res.kvs[i.key] = i.value
         return res
@@ -151,12 +151,12 @@ class ResolveResV1:
         """Decodes the given message (as returned by Connection.read_msg() as a ResolveResV1"""
         res = ResolveResV1([])
 
-        if msg.payloadType != msg_capnp.MessageTypes.resolveResV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.resolveResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as ResolveResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as ResolveResV1!"
             )
 
-        with msg_capnp.ResolveResV1.from_bytes(msg.payload) as req:
+        with msg_capnp.ResolveResV1.from_bytes(msg.payload()) as req:
             for i in req.matchingInterfaces:
                 uuid_num = (i.upper << 64) + i.lower
                 res.uuids.append(uuid.UUID(int=uuid_num))
@@ -185,12 +185,12 @@ class ReverseResolveReqV1:
         """Decodes the given message (as returned by Connection.read_msg() as a ReverseResolveRegV1"""
         res = ReverseResolveReqV1([])
 
-        if msg.payloadType != msg_capnp.MessageTypes.resolveResV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.resolveResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as ResolveResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as ResolveResV1!"
             )
 
-        with msg_capnp.ReverseResolveReqV1.from_bytes(msg.payload) as req:
+        with msg_capnp.ReverseResolveReqV1.from_bytes(msg.payload()) as req:
             res.uuid = (req.address.upper << 64) + req.address.lower
         return res
 
@@ -214,12 +214,12 @@ class ReverseResolveResV1:
         """Decodes the given message (as returned by Connection.read_msg() as a NamingServiceReqV1V1"""
         res = ReverseResolveResV1({})
 
-        if msg.payloadType != msg_capnp.MessageTypes.reverseResolveResV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.reverseResolveResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as NamingServiceReqV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as NamingServiceReqV1!"
             )
 
-        with msg_capnp.ReverseResolveResV1.from_bytes(msg.payload) as req:
+        with msg_capnp.ReverseResolveResV1.from_bytes(msg.payload()) as req:
             for i in req.name:
                 res.name[i.key] = i.value
         return res
@@ -250,12 +250,12 @@ class VectorReqV1:
         """Decodes the given message (as returned by Connection.read_msg()) as a VectorReqV1"""
         req_obj = VectorReqV1([])
 
-        if msg.payloadType != msg_capnp.MessageTypes.vectorReqV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.vectorReqV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as VectorReqV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as VectorReqV1!"
             )
 
-        with msg_capnp.VectorReqV1.from_bytes(msg.payload) as req:
+        with msg_capnp.VectorReqV1.from_bytes(msg.payload()) as req:
             # Convert Cap’n Proto list -> Python list
             req_obj.values = list(req.values)
 
@@ -287,12 +287,12 @@ class VectorResV1:
         """Decodes the given message (as returned by Connection.read_msg() as a VectorResV1"""
         res = VectorResV1([])
 
-        if msg.payloadType != msg_capnp.MessageTypes.vectorResV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.vectorResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as VectorResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as VectorResV1!"
             )
 
-        with msg_capnp.VectorResV1.from_bytes(msg.payload) as req:
+        with msg_capnp.VectorResV1.from_bytes(msg.payload()) as req:
             # Convert Cap’n Proto list → Python list
             res.results = list(req.results)
 
@@ -323,12 +323,12 @@ class FluxLifecycleEventV1:
         """Decodes the given message (as returned by Connection.read_msg() as a FluxLifecycleEventV1"""
         res = FluxLifecycleEventV1("")
 
-        if msg.payloadType != msg_capnp.MessageTypes.fluxLifecycleEventV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.fluxLifecycleEventV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as FluxLifecycleEventV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as FluxLifecycleEventV1!"
             )
 
-        with msg_capnp.FluxLifecycleEventV1.from_bytes(msg.payload) as req:
+        with msg_capnp.FluxLifecycleEventV1.from_bytes(msg.payload()) as req:
             # Convert Cap’n Proto list → Python list
             res.data = list(req.data)
 
@@ -354,12 +354,12 @@ class RegisterResolveReqV1:
         """Decodes the given message (as returned by Connection.read_msg() as a ResolveResV1"""
         res = RegisterResolveReqV1({}, uuid.UUID())
 
-        if msg.payloadType != msg_capnp.MessageTypes.registerResolveReqV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.registerResolveReqV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as ResolveResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as ResolveResV1!"
             )
 
-        with msg_capnp.RegisterResolveReqV1.from_bytes(msg.payload) as req:
+        with msg_capnp.RegisterResolveReqV1.from_bytes(msg.payload()) as req:
             res.uuid = (req.address.upper << 64) + req.address.lower
             for i in req.name:
                 res.name[i.key] = i.value
@@ -396,12 +396,12 @@ class ErrorResV1:
         """Decodes the given message (as returned by Connection.read_msg() as a ErrorResV1"""
         res = ErrorResV1(msg_capnp.ErrorCodeV1.ok, "")
 
-        if msg.payloadType != msg_capnp.MessageTypes.errorResV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.errorResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as ErrorResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as ErrorResV1!"
             )
 
-        with msg_capnp.ErrorResV1.from_bytes(msg.payload) as req:
+        with msg_capnp.ErrorResV1.from_bytes(msg.payload()) as req:
             res.error_code = req.errorCode
             res.what = req.what
 
@@ -428,12 +428,12 @@ class GetReqV1:
         """Decodes the given message (as returned by Connection.read_msg() as a GetReqV1"""
         res = GetReqV1()
 
-        if msg.payloadType != msg_capnp.MessageTypes.getReqV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.getReqV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as GetReqV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as GetReqV1!"
             )
 
-        with msg_capnp.GetReqV1.from_bytes(msg.payload) as req:
+        with msg_capnp.GetReqV1.from_bytes(msg.payload()) as _:
             pass
 
         return res
@@ -457,13 +457,13 @@ class GetResV1:
         """Decodes the given message (as returned by Connection.read_msg() as a GetResV1"""
         res = GetResV1(0)
 
-        if msg.payloadType != msg_capnp.MessageTypes.getResV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.getResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as GetResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as GetResV1!"
             )
 
-        with msg_capnp.GetResV1.from_bytes(msg.payload) as req:
-            self.value = req.value
+        with msg_capnp.GetResV1.from_bytes(msg.payload()) as req:
+            res.value = req.value
 
         return res
 
@@ -487,13 +487,13 @@ class SetReqV1:
         """Decodes the given message (as returned by Connection.read_msg() as a SetReqV1"""
         res = SetReqV1(0)
 
-        if msg.payloadType != msg_capnp.MessageTypes.setReqV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.setReqV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as SetReqV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as SetReqV1!"
             )
 
-        with msg_capnp.SetReqV1.from_bytes(msg.payload) as req:
-            self.value = req.value
+        with msg_capnp.SetReqV1.from_bytes(msg.payload()) as req:
+            res.value = req.value
 
         return res
 
@@ -516,12 +516,12 @@ class UnregisterResolveReqV1:
         """Decodes the given message (as returned by Connection.read_msg() as a ResolveResV1"""
         res = UnregisterResolveReqV1(uuid.UUID())
 
-        if msg.payloadType != msg_capnp.MessageTypes.unregisterResolveReqV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.unregisterResolveReqV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as ResolveResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as ResolveResV1!"
             )
 
-        with msg_capnp.UnregisterResolveReqV1.from_bytes(msg.payload) as req:
+        with msg_capnp.UnregisterResolveReqV1.from_bytes(msg.payload()) as req:
             res.uuid = (req.address.upper << 64) + req.address.lower
         return res
 
@@ -564,11 +564,11 @@ class HistoryReqV1:
         """Decodes the given message (as returned by Connection.read_msg() as a HistoryReqV1"""
         res = HistoryReqV1(uuid.UUID(), 0, 0, 0, "")
 
-        if msg.payloadType != msg_capnp.MessageTypes.historyReqV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.historyReqV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as UnregisterResolveResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as UnregisterResolveResV1!"
             )
-        with msg_capnp.historyReqV1.from_bytes(msg.payload) as req:
+        with msg_capnp.historyReqV1.from_bytes(msg.payload()) as req:
             res.address = uuid.UUID(req.address.upper << 64) + req.address.lower
             res.start_time = req.startTime
             res.end_time = req.endTime
@@ -696,12 +696,12 @@ class HistoryResV1:
     @staticmethod
     def from_capnp(msg) -> "HistoryResV1":
         ret = HistoryResV1()
-        if msg.payloadType != msg_capnp.MessageTypes.historyResV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.historyResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as HistoryResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as HistoryResV1!"
             )
 
-        with msg_capnp.HistoryResV1.from_bytes(msg.payload) as res:
+        with msg_capnp.HistoryResV1.from_bytes(msg.payload()) as res:
             ret.hist = History.from_capnp(res.hist)
         return ret
 
@@ -716,12 +716,12 @@ class FluxClassifyJobReqV1:
         """Decodes the given message (as returned by Connection.read_msg() as a FluxClassifyJobReqV1"""
         res = FluxClassifyJobReqV1(None)
 
-        if msg.payloadType != msg_capnp.MessageTypes.fluxClassifyJobReqV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.fluxClassifyJobReqV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as FluxClassifyJobReqV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as FluxClassifyJobReqV1!"
             )
 
-        with msg_capnp.FluxClassifyJobReqV1.from_bytes(msg.payload) as req:
+        with msg_capnp.FluxClassifyJobReqV1.from_bytes(msg.payload()) as req:
             res.jobspec = req.jobspec
 
         return req
@@ -745,12 +745,12 @@ class FluxClassifyJobResV1:
         """Decodes the given message (as returned by Connection.read_msg() as a FluxClassifyJobResV1"""
         res = FluxClassifyJobResV1(None)
 
-        if msg.payloadType != msg_capnp.MessageTypes.fluxClassifyJobResV1:
+        if msg.payload_type_as_int() != msg_capnp.MessageTypes.fluxClassifyJobResV1:
             raise RuntimeError(
-                f"Can not interpret message of type {msg.payloadType} as FluxClassifyJobResV1!"
+                f"Can not interpret message of type {msg.payload_type_as_int()} as FluxClassifyJobResV1!"
             )
 
-        with msg_capnp.FluxClassifyJobResV1.from_bytes(msg.payload) as req:
+        with msg_capnp.FluxClassifyJobResV1.from_bytes(msg.payload()) as req:
             res.result = req.result
 
         return res
@@ -777,7 +777,7 @@ class UserDefinedPayload:
 
     @staticmethod
     def from_capnp(msg):
-        res = UserDefinedPayload(msg.payload_type, msg.payload)
+        res = UserDefinedPayload(msg.payload_type, msg.payload())
         return res
 
     def to_capnp(self) -> tuple[int, bytes]:

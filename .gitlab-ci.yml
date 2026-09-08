@@ -29,7 +29,8 @@ build-python:
   stage: build
   script:
     - apt-get update && apt-get install -y cmake capnproto libcapnp-dev
-    - pip install .
+    - pip install uv
+    - uv build
 
 test:ruff-format:
   image: python:latest
