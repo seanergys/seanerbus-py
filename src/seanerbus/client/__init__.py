@@ -18,10 +18,16 @@ def conn_handler(conn: seanerbus_cpp_py.Connection):
 
 
 class MsgHandle:
+    """A handle that returns messages from a subscription or exposed req/res service"""
+
     def __init__(self):
+        """Creates a new MsgHandle"""
         self.queue: asyncio.Queue[seanerbus_cpp_py.ExpectedMsg] = asyncio.Queue()
 
     async def __call__(self) -> seanerbus_cpp_py.Message:
+        """Waits for another message.
+
+        :return: The next message"""
         res = await self.queue.get()
 
         self.queue.task_done()
@@ -36,11 +42,17 @@ class MsgHandle:
 
 
 class OneShotMsgHandle:
+    """A handle that returns a message when awaited only once"""
+
     def __init__(self):
         self.shot = False
         self.queue: asyncio.Queue[seanerbus_cpp_py.ExpectedMsg] = asyncio.Queue()
 
     async def __call__(self) -> seanerbus_cpp_py.Message:
+        """Waits for the message.
+        Calling this function multiple times is an error!
+
+        :return: A SeanerbUS Message"""
         if self.shot:
             raise RuntimeError("OneShotHandle has already received a message!")
         res = await self.queue.get()
@@ -58,10 +70,13 @@ class OneShotMsgHandle:
 
 
 class VoidHandle:
+    """A handle for operations that do not return anything on success"""
+
     def __init__(self):
         self.queue: asyncio.Queue[seanerbus_cpp_py.ExpectedVoid] = asyncio.Queue()
 
     async def __call__(self) -> None:
+        """Waits for the operation that handle represents to finish"""
         res = await self.queue.get()
 
         self.queue.task_done()
@@ -76,11 +91,14 @@ class VoidHandle:
 
 
 class OneShotVoidHandle:
+    """A handle which the success of an operation can be queried once"""
+
     def __init__(self):
         self.queue: asyncio.Queue[seanerbus_cpp_py.ExpectedVoid] = asyncio.Queue()
         self.shot = False
 
     async def __call__(self) -> None:
+        """Waits for the operation to complete"""
         if self.shot:
             raise RuntimeError("OneShotHandle has already received an answer!")
         self.shot = True
@@ -109,8 +127,10 @@ class Connection:
         )
 
     async def subscribe(self, subscribe_to: str):
-        """Subscribes to publish messages from the address subscribe_to.
-        When messages are published to this address, they will be forwarded to this client and can be read with read_msg()"""
+        """Subscribes to published messages from the address subscribe_to.
+
+        :param subscribe_to: The Address to subscribe to
+        :return: a MsgHandle returning subscribed messages when await()ed"""
 
         handle = MsgHandle()
         self.conn.subscribe(seanerbus_cpp_py.Address(subscribe_to), handle.receiver())
@@ -118,7 +138,10 @@ class Connection:
         return handle
 
     async def register_endpoint(self, register_to: str) -> MsgHandle:
-        """Registers a req/res service at register_to. requests to this address will be then forwarded to this client"""
+        """Registers a req/res service at register_to.a
+
+        :param register_to: The address to register
+        :return: a MsgHandle with which requests can be awaited"""
         handle = MsgHandle()
         self.conn.register_endpoint(
             seanerbus_cpp_py.Address(register_to),
@@ -128,7 +151,11 @@ class Connection:
         return handle
 
     async def publish(self, addr: str, payload: tuple[int, bytes]):
-        """Publishes the payload to the given address"""
+        """Publishes the payload to the given address
+
+        :param addr: The address to publish to
+        :param payload: The payload to publish
+        :return: OneShotVoidHandle with which the completion of the publish can be awaited"""
         msg = seanerbus_cpp_py.Message(
             seanerbus_cpp_py.Address(addr), payload[0], payload[1]
         )
@@ -138,7 +165,11 @@ class Connection:
         return handle
 
     async def request(self, addr: str, payload: tuple[int, bytes]):
-        """Publishes the payload to the given address"""
+        """Requests a req/res service
+
+        :param addr: Address of the req/res service to request
+        :param payload: payload to send as a request
+        :return: OneShotMsgHandle with which the response can be awaited"""
         msg = seanerbus_cpp_py.Message(
             seanerbus_cpp_py.Address(addr), payload[0], payload[1]
         )
@@ -151,8 +182,13 @@ class Connection:
     async def respond_to(
         self, from_msg: seanerbus_cpp_py.Message, payload: tuple[int, bytes]
     ):
+        """Responds to an incoming request
+
+        :param from_msg: Message to respond to
+        :param payload: Payload to sent as a response
+        :return: OneShotVoidHandle with which the sending of the response can be awaited
+        """
         handle = OneShotVoidHandle()
-        """Publishes the payload to the given address"""
         msg = seanerbus_cpp_py.Message(from_msg.address(), payload[0], payload[1])
 
         self.conn.respond_to(from_msg, msg, handle.receiver())
