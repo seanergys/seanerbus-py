@@ -10,7 +10,7 @@ from seanerbus_cpp_py import Message
 
 
 def uuid_to_u64_pair(uuid_str: str) -> tuple[int, int]:
-    uuid : UUID= UUID(uuid_str)
+    uuid: UUID = UUID(uuid_str)
     upper = uuid.int >> 64
     lower = uuid.int & (1 << 64) - 1
     return (upper, lower)
@@ -184,7 +184,7 @@ class ReverseResolveReqV1:
     """A request payload for a reverse resolve, e.g. address back to name"""
 
     def __init__(self, addr: str):
-        self.addr: str = addr 
+        self.addr: str = addr
 
     @staticmethod
     def from_capnp(msg: Message):
@@ -521,7 +521,7 @@ class UnregisterResolveReqV1:
         self.uuid: str = uuid
 
     @staticmethod
-    def from_capnp(msg : Message):
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a ResolveResV1"""
         res = UnregisterResolveReqV1("")
 
@@ -569,7 +569,7 @@ class HistoryReqV1:
         self.history_type: str = history_type
 
     @staticmethod
-    def from_capnp(msg : Message) -> "HistoryReqV1":
+    def from_capnp(msg: Message) -> "HistoryReqV1":
         """Decodes the given message (as returned by Connection.read_msg() as a HistoryReqV1"""
         res = HistoryReqV1("", 0, 0, 0, "")
 
@@ -703,7 +703,7 @@ class HistoryResV1:
         self.hist: History
 
     @staticmethod
-    def from_capnp(msg : Message) -> "HistoryResV1":
+    def from_capnp(msg: Message) -> "HistoryResV1":
         ret = HistoryResV1()
         if msg.payload_type_as_int() != msg_capnp.MessageTypes.historyResV1:
             raise RuntimeError(
@@ -721,7 +721,7 @@ class FluxClassifyJobReqV1:
         self.jobspec = jobspec
 
     @staticmethod
-    def from_capnp(msg : Message):
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a FluxClassifyJobReqV1"""
         res = FluxClassifyJobReqV1(None)
 
@@ -750,7 +750,7 @@ class FluxClassifyJobResV1:
         self.result = result
 
     @staticmethod
-    def from_capnp(msg : Message):
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a FluxClassifyJobResV1"""
         res = FluxClassifyJobResV1(None)
 
@@ -785,7 +785,7 @@ class UserDefinedPayload:
         self.payload_type: int = payload_type
 
     @staticmethod
-    def from_capnp(msg : Message):
+    def from_capnp(msg: Message):
         res = UserDefinedPayload(msg.payload_type_as_int(), msg.payload())
         return res
 
