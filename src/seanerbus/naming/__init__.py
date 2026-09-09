@@ -21,8 +21,6 @@ async def resolve(conn: Connection, name: dict[str, str]) -> list[str]:
     res = await handle()
     msg = ResolveResV1.from_capnp(res)
 
-    msg = ResolveResV1.from_capnp(await handle())
-
     return msg.uuids
 
 
