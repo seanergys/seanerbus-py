@@ -31,7 +31,7 @@ async def get_aggregate(
     handle = await conn.request(
         db_addr,
         HistoryReqV1(
-            uuid.UUID(addr), start_time, end_time, interval_max, "aggregate"
+            addr, start_time, end_time, interval_max, "aggregate"
         ).to_capnp(),
     )
 
@@ -71,7 +71,7 @@ async def get_timeline(
     handle = await conn.request(
         db_addr,
         HistoryReqV1(
-            uuid.UUID(addr), start_time, end_time, interval_max, "flexTimeline"
+            addr, start_time, end_time, interval_max, "flexTimeline"
         ).to_capnp(),
     )
     response = await handle()
