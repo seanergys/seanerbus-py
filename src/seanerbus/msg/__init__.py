@@ -6,8 +6,10 @@ import capnp
 import os
 import uuid
 
+from seanerbus_cpp_py import Message
 
-def uuid_to_u64_pair(uuid: uuid.UUID) -> tuple[int, int]:
+
+def uuid_to_u64_pair(uuid: str) -> tuple[int, int]:
     upper = uuid.int >> 64
     lower = uuid.int & (1 << 64) - 1
     return (upper, lower)
@@ -27,7 +29,7 @@ class TimeValueV1:
         self.value: float = value
 
     @staticmethod
-    def from_capnp(msg):
+    def from_capnp(msg: Message):
         """Takes a message (as returned by Connection.read_msg() and decode it as TimeValueV1 returning it."""
         res = TimeValueV1(0, 0.0)
         if msg.payload_type_as_int() != msg_capnp.MessageTypes.timeValueV1:
@@ -55,7 +57,7 @@ class HelloWorldReqV1:
         self.msg = msg
 
     @staticmethod
-    def from_capnp(msg):
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a HelloWorldReqV1"""
         res = HelloWorldReqV1("")
 
@@ -111,7 +113,8 @@ class ResolveReqV1:
         :param kvs: The name dict to look up"""
         self.kvs: dict[str, str] = kvs
 
-    def from_capnp(msg):
+    @staticmethod
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a NamingServiceReqV1V1"""
         res = ResolveReqV1({})
 
@@ -142,12 +145,13 @@ class ResolveReqV1:
 class ResolveResV1:
     """A response to a resolve request payload"""
 
-    def __init__(self, uuids: list[uuid.UUID]):
+    def __init__(self, uuids: list[str]):
         """Creates a ResolveResV1 from a list of addresses
         :param uuids: The list of addresses to include in the response"""
-        self.uuids: list[uuid.UUID] = uuids
+        self.uuids: list[str] = uuids
 
-    def from_capnp(msg):
+    @staticmethod
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a ResolveResV1"""
         res = ResolveResV1([])
 
@@ -159,7 +163,7 @@ class ResolveResV1:
         with msg_capnp.ResolveResV1.from_bytes(msg.payload()) as req:
             for i in req.matchingInterfaces:
                 uuid_num = (i.upper << 64) + i.lower
-                res.uuids.append(uuid.UUID(int=uuid_num))
+                res.uuids.append(str(uuid.UUID(int=uuid_num)))
         return res
 
     def to_capnp(self) -> tuple[int, bytes]:
@@ -178,12 +182,13 @@ class ResolveResV1:
 class ReverseResolveReqV1:
     """A request payload for a reverse resolve, e.g. address back to name"""
 
-    def __init__(self, uuid: uuid.UUID):
-        self.uuid: uuid.UUID = uuid
+    def __init__(self, uuid: str):
+        self.uuid: str = uuid
 
-    def from_capnp(msg):
+    @staticmethod
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a ReverseResolveRegV1"""
-        res = ReverseResolveReqV1([])
+        res = ReverseResolveReqV1("")
 
         if msg.payload_type_as_int() != msg_capnp.MessageTypes.resolveResV1:
             raise RuntimeError(
@@ -191,14 +196,14 @@ class ReverseResolveReqV1:
             )
 
         with msg_capnp.ReverseResolveReqV1.from_bytes(msg.payload()) as req:
-            res.uuid = (req.address.upper << 64) + req.address.lower
+            res.uuid = str(uuid.UUID(int=(req.address.upper << 64) + req.address.lower))
         return res
 
     def to_capnp(self) -> tuple[int, bytes]:
         """Encodes this ReverseResolveReqV1 as a Cap'n'Proto payload, so that it can be used with Connection.subscribe()"""
         msg = msg_capnp.ReverseResolveReqV1.new_message()
 
-        (upper, lower) = uuid_to_u64_pair(self.uuid)
+        (upper, lower) = uuid_to_u64_pair(uuid.UUID(self.uuid))
         msg.address.upper = upper
         msg.address.lower = lower
         return (msg_capnp.MessageTypes.reverseResolveReqV1, msg.to_bytes())
@@ -210,7 +215,8 @@ class ReverseResolveResV1:
     def __init__(self, name: dict[str, str]):
         self.name: dict[str, str] = name
 
-    def from_capnp(msg):
+    @staticmethod
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a NamingServiceReqV1V1"""
         res = ReverseResolveResV1({})
 
@@ -346,13 +352,14 @@ class FluxLifecycleEventV1:
 class RegisterResolveReqV1:
     """A request payload for registering a new name to address mapping"""
 
-    def __init__(self, name: dict[str, str], uuid: uuid.UUID):
+    def __init__(self, name: dict[str, str], addr: str):
         self.name: dict[str, str] = name
-        self.uuid: uuid.UUID = uuid
+        self.addr: str = addr
 
-    def from_capnp(msg):
+    @staticmethod
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a ResolveResV1"""
-        res = RegisterResolveReqV1({}, uuid.UUID())
+        res = RegisterResolveReqV1({}, "")
 
         if msg.payload_type_as_int() != msg_capnp.MessageTypes.registerResolveReqV1:
             raise RuntimeError(
@@ -360,7 +367,7 @@ class RegisterResolveReqV1:
             )
 
         with msg_capnp.RegisterResolveReqV1.from_bytes(msg.payload()) as req:
-            res.uuid = (req.address.upper << 64) + req.address.lower
+            res.addr = str(uuid.UUID(int=(req.address.upper << 64) + req.address.lower))
             for i in req.name:
                 res.name[i.key] = i.value
         return res
@@ -388,11 +395,11 @@ class ErrorResV1:
 
     def __init__(self, error_code, what):
         """Creates a new ErrorResV1 from the error_code and optionally an error message"""
-        self.error_code = error_code
+        self.error_code: int = error_code
         self.what: str = what
 
     @staticmethod
-    def from_capnp(msg):
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a ErrorResV1"""
         res = ErrorResV1(msg_capnp.ErrorCodeV1.ok, "")
 
@@ -453,7 +460,7 @@ class GetResV1:
         """Creates a new GetResV1 from the value that is responded to the get request"""
 
     @staticmethod
-    def from_capnp(msg):
+    def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a GetResV1"""
         res = GetResV1(0)
 
@@ -508,9 +515,9 @@ class SetReqV1:
 class UnregisterResolveReqV1:
     """A request payload for unregistering an addr to name mapping"""
 
-    def __init__(self, uuid: uuid.UUID):
+    def __init__(self, uuid: str):
         """Creates a new unregister request for the given address"""
-        self.uuid: uuid.UUID = uuid
+        self.uuid: str = uuid
 
     def from_capnp(msg):
         """Decodes the given message (as returned by Connection.read_msg() as a ResolveResV1"""
@@ -540,7 +547,7 @@ class HistoryReqV1:
 
     def __init__(
         self,
-        address: uuid.UUID,
+        address: str,
         start_time: int,
         end_time: int,
         interval_max: int,
@@ -553,7 +560,7 @@ class HistoryReqV1:
         :param end_time: End of the interval to query
         :interval_max: TODO DOCUMENT (leave as 0 for now)
         :history_type: Type of history, either \"aggregate\" (one Aggregate over the [start, end] or \""""
-        self.address: uuid.UUID = address
+        self.address: str = address
         self.start_time: int = start_time
         self.end_time: int = end_time
         self.interval_max: int = interval_max
