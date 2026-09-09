@@ -21,7 +21,7 @@ async def main():
 
     while True:
         tv = TimeValueV1.from_capnp(await handle())
-        print(tv.time, tv.value)
+        print(tv.time.to_ns(), tv.value)
 
 
 if len(sys.argv) != 2:
