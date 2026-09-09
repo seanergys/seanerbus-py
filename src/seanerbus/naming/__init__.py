@@ -9,10 +9,7 @@ from ..msg import UnregisterResolveReqV1
 from ..msg import msg_capnp
 from ..client import MsgHandle
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from ..client import Connection
+from ..client import Connection
 
 
 async def resolve(conn: Connection, name: dict[str, str]) -> list[str]:
