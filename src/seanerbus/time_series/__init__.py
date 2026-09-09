@@ -30,9 +30,7 @@ async def get_aggregate(
 
     handle = await conn.request(
         db_addr,
-        HistoryReqV1(
-            addr, start_time, end_time, interval_max, "aggregate"
-        ).to_capnp(),
+        HistoryReqV1(addr, start_time, end_time, interval_max, "aggregate").to_capnp(),
     )
 
     response = await handle()
