@@ -13,6 +13,9 @@ class Time:
 
     timestamp: int
 
+    def __eq__(self, other):
+        return self.timestamp == other.timestamp
+
     @staticmethod
     def now() -> "Time":
         """Creates a SEANERGYS time object of the current time"""
