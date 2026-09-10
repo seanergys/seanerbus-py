@@ -38,3 +38,16 @@ test:ruff-format:
   script:
     - pip install ruff
     - ruff format --check
+
+test:test:
+  image: python:latest
+  stage: test
+  script:
+    - apt-get update && apt-get install -y cmake capnproto libcapnp-dev
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.seanergys.fz-juelich.de/software/seanerbus-cpp.git".insteadOf ssh://git@gitlab.seanergys.fz-juelich.de/software/seanerbus-cpp.git
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.seanergys.fz-juelich.de/software/seanerbus-msg.git".insteadOf git@gitlab.seanergys.fz-juelich.de:software/seanerbus-msg.git
+    - pip install uv
+    - uv venv
+    - uv pip install ".[test]"
+    - uv run pytest tests/test.py
+
