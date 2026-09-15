@@ -187,9 +187,10 @@ def test_GetReqV1():
 
 
 def test_GetResV1():
-    tv = GetResV1(42)
+    tv = GetResV1(42, Time.from_ns(1234))
 
     assert tv.value == 42
+    assert tv.time.to_ns() == 1234
 
     to_from_dict(tv)
     to_from_capnp(tv)

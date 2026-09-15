@@ -616,14 +616,15 @@ class GetReqV1:
 class GetResV1:
     """A response to requesting singular numeric values"""
 
-    def __init__(self, value: int):
+    def __init__(self, value: int, time: Time):
         self.value: int = value
+        self.time: Time = time
         """Creates a new GetResV1 from the value that is responded to the get request"""
 
     @staticmethod
     def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a GetResV1"""
-        res = GetResV1(0)
+        res = GetResV1(0, Time.now())
 
         if msg.payload_type_as_int() != msg_capnp.MessageTypes.getResV1:
             raise RuntimeError(
@@ -632,6 +633,7 @@ class GetResV1:
 
         with msg_capnp.GetResV1.from_bytes(msg.payload()) as req:
             res.value = req.value
+            res.time = Time.from_ns(req.time)
 
         return res
 
@@ -640,19 +642,20 @@ class GetResV1:
         msg = msg_capnp.GetResV1.new_message()
 
         msg.value = self.value
+        msg.time = self.time.to_ns()
         return (msg_capnp.MessageTypes.getResV1, msg.to_bytes())
 
     def __eq__(self, value: object, /) -> bool:
         if isinstance(value, GetResV1):
-            return self.value == value.value
+            return self.value == value.value and self.time == value.time
         return False
 
     @staticmethod
     def from_dict(in_dict: dict) -> "GetResV1":
-        return GetResV1(in_dict["value"])
+        return GetResV1(in_dict["value"], in_dict["time"])
 
     def to_dict(self) -> dict:
-        return {"value": self.value}
+        return {"value": self.value, "time": self.time}
 
 
 class SetReqV1:

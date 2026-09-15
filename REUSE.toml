@@ -7,6 +7,7 @@ path = [
 "src/seanerbus/client/.gitignore",
 "src/seanerbus/client/internal.capnp",
 ".gitlab-ci.yml",
+".gitignore",
 "README.md"
    ]
 SPDX-FileCopyrightText = "2026 SEANERGYS Partners <https://seanergys.eu>"
