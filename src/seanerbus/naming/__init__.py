@@ -21,7 +21,7 @@ async def resolve(conn: Connection, name: dict[str, str]) -> list[str]:
     res = await handle()
     msg = ResolveResV1.from_capnp(res)
 
-    return msg.uuids
+    return msg.addrs
 
 
 async def reverse_resolve(conn: Connection, addr: str) -> dict[str, str]:
