@@ -14,7 +14,7 @@ from seanerbus.time import Time
 def to_from_capnp(tv):
     payload_type, payload = tv.to_capnp()
     msg = Message(
-        seanerbus_cpp_py.Address("15a1a4c6-e83b-4699-bbdb-448b26edf1cc"),
+        seanerbus_cpp_py.Entity("15a1a4c6-e83b-4699-bbdb-448b26edf1cc"),
         payload_type,
         payload,
     )
@@ -71,7 +71,7 @@ def test_ResolveReqV1():
 
 def test_ResolveResV1_error():
     tv = ResolveResV1(["foo"])
-    assert tv.addrs == ["foo"]
+    assert tv.entities == ["foo"]
 
     to_from_dict(tv)
     with pytest.raises(ValueError):
@@ -80,7 +80,7 @@ def test_ResolveResV1_error():
 
 def test_ResolveResV1_empty():
     tv = ResolveResV1([])
-    assert tv.addrs == []
+    assert tv.entities == []
 
     to_from_dict(tv)
     to_from_capnp(tv)
@@ -90,7 +90,7 @@ def test_ResolveResV1():
     tv = ResolveResV1(
         ["c0ea7f8d-ba35-4a10-85ba-8d2f45848c93", "3d8a1ee2-9131-40fe-9691-af42d86cd889"]
     )
-    assert tv.addrs == [
+    assert tv.entities == [
         "c0ea7f8d-ba35-4a10-85ba-8d2f45848c93",
         "3d8a1ee2-9131-40fe-9691-af42d86cd889",
     ]
@@ -101,7 +101,7 @@ def test_ResolveResV1():
 
 def test_ReverseResolveReqV1_error():
     tv = ReverseResolveReqV1("foo")
-    assert tv.addr == "foo"
+    assert tv.entity == "foo"
 
     to_from_dict(tv)
     with pytest.raises(ValueError):
@@ -110,7 +110,7 @@ def test_ReverseResolveReqV1_error():
 
 def test_ReverseResolveReqV1():
     tv = ReverseResolveReqV1("c0ea7f8d-ba35-4a10-85ba-8d2f45848c93")
-    assert tv.addr == "c0ea7f8d-ba35-4a10-85ba-8d2f45848c93"
+    assert tv.entity == "c0ea7f8d-ba35-4a10-85ba-8d2f45848c93"
 
     to_from_dict(tv)
     to_from_capnp(tv)
@@ -163,7 +163,7 @@ def test_RegisterResolveReqV1():
     tv = RegisterResolveReqV1({"foo": "bar"}, "c0ea7f8d-ba35-4a10-85ba-8d2f45848c93")
 
     assert tv.name == {"foo": "bar"}
-    assert tv.addr == "c0ea7f8d-ba35-4a10-85ba-8d2f45848c93"
+    assert tv.entity == "c0ea7f8d-ba35-4a10-85ba-8d2f45848c93"
 
     to_from_dict(tv)
     to_from_capnp(tv)
