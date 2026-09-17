@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 [build-system]
-requires = ["setuptools"]
+requires = ["uv", "setuptools"]
 
 [project]
 dependencies = [
@@ -29,7 +29,7 @@ where = ["src"]
 seanerbus = ["client/internal.capnp", "msg/schemas/msg.capnp"]
 
 [tool.uv.sources]
-seanerbus_cpp_py = { git = "ssh://git@gitlab.seanergys.fz-juelich.de/software/seanerbus-cpp.git", rev="5a9ba44f4d3e984bbbaf3cc91f98bd6bc57e0eec"}
+seanerbus_cpp_py = { git = "ssh://git@gitlab.seanergys.fz-juelich.de/software/seanerbus-cpp.git", rev="e2782df35f4f0daf8066b97946a2087a457a6874"}
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
 # Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
