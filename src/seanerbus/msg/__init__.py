@@ -2,9 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from re import L
-from time import time
-
 import capnp
 import os
 from uuid import UUID
@@ -164,7 +161,7 @@ class ResolveReqV1:
             )
 
         with msg_capnp.ResolveReqV1.from_bytes(msg.payload()) as req:
-            for i in req.attributes:
+            for i in req.name:
                 res.name[i.key] = i.value
         return res
 
@@ -174,11 +171,11 @@ class ResolveReqV1:
 
         list_of_kvs = list(self.name.items())
 
-        msg.init("attributes", len(list_of_kvs))
+        msg.init("name", len(list_of_kvs))
 
         for num, element in enumerate(list_of_kvs):
-            msg.attributes[num].key = element[0]
-            msg.attributes[num].value = element[1]
+            msg.name[num].key = element[0]
+            msg.name[num].value = element[1]
         return (msg_capnp.MessageTypes.resolveReqV1, msg.to_bytes())
 
     def __eq__(self, value: object, /) -> bool:
@@ -197,11 +194,11 @@ class ResolveReqV1:
 class ResolveResV1:
     """A response to a resolve request payload"""
 
-    def __init__(self, addrs: list[str]):
-        """Creates a ResolveResV1 from a list of addresses
+    def __init__(self, entities: list[str]):
+        """Creates a ResolveResV1 from a list of entityes
 
-        :param uuids: The list of addresses to include in the response"""
-        self.addrs: list[str] = addrs
+        :param uuids: The list of entityes to include in the response"""
+        self.entities: list[str] = entities
 
     @staticmethod
     def from_capnp(msg: Message):
@@ -214,41 +211,41 @@ class ResolveResV1:
             )
 
         with msg_capnp.ResolveResV1.from_bytes(msg.payload()) as req:
-            for i in req.matchingInterfaces:
+            for i in req.entities:
                 uuid_num = (i.upper << 64) + i.lower
-                res.addrs.append(str(UUID(int=uuid_num)))
+                res.entities.append(str(UUID(int=uuid_num)))
         return res
 
     def to_capnp(self) -> tuple[int, bytes]:
         """Encodes this ResolveResV1 as a Cap'n'Proto payload, so that it can be used with Connection.subscribe()"""
         msg = msg_capnp.ResolveResV1.new_message()
 
-        msg.init("matchingInterfaces", len(self.addrs))
+        msg.init("entities", len(self.entities))
 
-        for num, uuid_in in enumerate(self.addrs):
+        for num, uuid_in in enumerate(self.entities):
             (upper, lower) = uuid_to_u64_pair(uuid_in)
-            msg.matchingInterfaces[num].upper = upper
-            msg.matchingInterfaces[num].lower = lower
+            msg.entities[num].upper = upper
+            msg.entities[num].lower = lower
         return (msg_capnp.MessageTypes.resolveResV1, msg.to_bytes())
 
     def __eq__(self, value: object, /) -> bool:
         if isinstance(value, ResolveResV1):
-            return self.addrs == value.addrs
+            return self.entities == value.entities
         return False
 
     def to_dict(self) -> dict:
-        return {"addrs": self.addrs}
+        return {"entities": self.entities}
 
     @staticmethod
     def from_dict(in_dict) -> "ResolveResV1":
-        return ResolveResV1(in_dict["addrs"])
+        return ResolveResV1(in_dict["entities"])
 
 
 class ReverseResolveReqV1:
-    """A request payload for a reverse resolve, e.g. address back to name"""
+    """A request payload for a reverse resolve, e.g. entity back to name"""
 
-    def __init__(self, addr: str):
-        self.addr: str = addr
+    def __init__(self, entity: str):
+        self.entity: str = entity
 
     @staticmethod
     def from_capnp(msg: Message):
@@ -261,33 +258,33 @@ class ReverseResolveReqV1:
             )
 
         with msg_capnp.ReverseResolveReqV1.from_bytes(msg.payload()) as req:
-            res.addr = str(UUID(int=(req.address.upper << 64) + req.address.lower))
+            res.entity = str(UUID(int=(req.entity.upper << 64) + req.entity.lower))
         return res
 
     def to_capnp(self) -> tuple[int, bytes]:
         """Encodes this ReverseResolveReqV1 as a Cap'n'Proto payload, so that it can be used with Connection.subscribe()"""
         msg = msg_capnp.ReverseResolveReqV1.new_message()
 
-        (upper, lower) = uuid_to_u64_pair(self.addr)
-        msg.address.upper = upper
-        msg.address.lower = lower
+        (upper, lower) = uuid_to_u64_pair(self.entity)
+        msg.entity.upper = upper
+        msg.entity.lower = lower
         return (msg_capnp.MessageTypes.reverseResolveReqV1, msg.to_bytes())
 
     def to_dict(self) -> dict:
-        return {"addr": self.addr}
+        return {"entity": self.entity}
 
     @staticmethod
     def from_dict(in_dict) -> "ReverseResolveReqV1":
-        return ReverseResolveReqV1(in_dict["addr"])
+        return ReverseResolveReqV1(in_dict["entity"])
 
     def __eq__(self, value: object, /) -> bool:
         if isinstance(value, ReverseResolveReqV1):
-            return self.addr == value.addr
+            return self.entity == value.entity
         return False
 
 
 class ReverseResolveResV1:
-    """A reverse resolve response payload for translating addresses back to names"""
+    """A reverse resolve response payload for translating entityes back to names"""
 
     def __init__(self, name: dict[str, str]):
         self.name: dict[str, str] = name
@@ -475,11 +472,11 @@ class FluxLifecycleEventV1:
 
 
 class RegisterResolveReqV1:
-    """A request payload for registering a new name to address mapping"""
+    """A request payload for registering a new name to entity mapping"""
 
-    def __init__(self, name: dict[str, str], addr: str):
+    def __init__(self, name: dict[str, str], entity: str):
         self.name: dict[str, str] = name
-        self.addr: str = addr
+        self.entity: str = entity
 
     @staticmethod
     def from_capnp(msg: Message):
@@ -492,7 +489,7 @@ class RegisterResolveReqV1:
             )
 
         with msg_capnp.RegisterResolveReqV1.from_bytes(msg.payload()) as req:
-            res.addr = str(UUID(int=(req.address.upper << 64) + req.address.lower))
+            res.entity = str(UUID(int=(req.entity.upper << 64) + req.entity.lower))
             for i in req.name:
                 res.name[i.key] = i.value
         return res
@@ -501,9 +498,9 @@ class RegisterResolveReqV1:
         """Encodes this ResolveResV1 as a Cap'n'Proto payload, so that it can be used with Connection.subscribe()"""
         msg = msg_capnp.RegisterResolveReqV1.new_message()
 
-        (upper, lower) = uuid_to_u64_pair(self.addr)
-        msg.address.upper = upper
-        msg.address.lower = lower
+        (upper, lower) = uuid_to_u64_pair(self.entity)
+        msg.entity.upper = upper
+        msg.entity.lower = lower
 
         list_of_kvs = list(self.name.items())
 
@@ -516,15 +513,15 @@ class RegisterResolveReqV1:
 
     def __eq__(self, value: object, /) -> bool:
         if isinstance(self, RegisterResolveReqV1):
-            return self.name == value.name and self.addr == value.addr
+            return self.name == value.name and self.entity == value.entity
         return False
 
     def to_dict(self) -> dict:
-        return {"name": self.name, "addr": self.addr}
+        return {"name": self.name, "entity": self.entity}
 
     @staticmethod
     def from_dict(in_dict) -> "RegisterResolveReqV1":
-        return RegisterResolveReqV1(in_dict["name"], in_dict["addr"])
+        return RegisterResolveReqV1(in_dict["name"], in_dict["entity"])
 
 
 class ErrorResV1:
@@ -701,11 +698,11 @@ class SetReqV1:
 
 
 class UnregisterResolveReqV1:
-    """A request payload for unregistering an addr to name mapping"""
+    """A request payload for unregistering an entity to name mapping"""
 
-    def __init__(self, addr: str):
-        """Creates a new unregister request for the given address"""
-        self.uuid: str = addr
+    def __init__(self, entity: str):
+        """Creates a new unregister request for the given entity"""
+        self.uuid: str = entity
 
     @staticmethod
     def from_capnp(msg: Message):
@@ -718,7 +715,7 @@ class UnregisterResolveReqV1:
             )
 
         with msg_capnp.UnregisterResolveReqV1.from_bytes(msg.payload()) as req:
-            res.uuid = (req.address.upper << 64) + req.address.lower
+            res.uuid = (req.entity.upper << 64) + req.entity.lower
         return res
 
     def to_capnp(self) -> tuple[int, bytes]:
@@ -726,8 +723,8 @@ class UnregisterResolveReqV1:
         msg = msg_capnp.UnregisterResolveReqV1.new_message()
 
         (upper, lower) = uuid_to_u64_pair(self.uuid)
-        msg.address.upper = upper
-        msg.address.lower = lower
+        msg.entity.upper = upper
+        msg.entity.lower = lower
         return (msg_capnp.MessageTypes.unregisterResolveReqV1, msg.to_bytes())
 
 
@@ -736,7 +733,7 @@ class HistoryReqV1:
 
     def __init__(
         self,
-        address: str,
+        entity: str,
         start_time: int,
         end_time: int,
         interval_max: int,
@@ -744,12 +741,12 @@ class HistoryReqV1:
     ):
         """Creates a HistoryReqV1
 
-        :param address: Address of the metric to query
+        :param entity: Entity of the metric to query
         :param start_time: Start of the interval to query
         :param end_time: End of the interval to query
         :interval_max: TODO DOCUMENT (leave as 0 for now)
         :history_type: Type of history, either \"aggregate\" (one Aggregate over the [start, end] or \""""
-        self.address: str = address
+        self.entity: str = entity
         self.start_time: int = start_time
         self.end_time: int = end_time
         self.interval_max: int = interval_max
@@ -765,7 +762,7 @@ class HistoryReqV1:
                 f"Can not interpret message of type {msg.payload_type_as_int()} as UnregisterResolveResV1!"
             )
         with msg_capnp.historyReqV1.from_bytes(msg.payload()) as req:
-            res.address = str(UUID((req.address.upper << 64) + req.address.lower))
+            res.entity = str(UUID((req.entity.upper << 64) + req.entity.lower))
             res.start_time = req.startTime
             res.end_time = req.endTime
             res.interval_max = req.intervalMax
@@ -776,9 +773,9 @@ class HistoryReqV1:
     def to_capnp(self) -> tuple[int, bytes]:
         msg = msg_capnp.HistoryReqV1.new_message()
 
-        (upper, lower) = uuid_to_u64_pair(self.address)
-        msg.address.upper = upper
-        msg.address.lower = lower
+        (upper, lower) = uuid_to_u64_pair(self.entity)
+        msg.entity.upper = upper
+        msg.entity.lower = lower
         msg.startTime = self.start_time
         msg.endTime = self.end_time
         msg.intervalMax = self.interval_max

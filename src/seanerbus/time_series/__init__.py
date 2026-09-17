@@ -5,32 +5,33 @@
 from ..client import Connection
 from ..msg import Aggregate, HistoryReqV1, HistoryResV1, History, msg_capnp, ErrorResV1
 from ..naming import resolve
-import uuid
 
 
 async def get_aggregate(
     conn: Connection,
-    addr: str,
+    entity: str,
     start_time: int,
     end_time: int,
     interval_max: int = 0,
 ) -> Aggregate:
     """Get one aggregate value over the time interval [start_time, end_time]
 
-    :param addr: Address of the metric to query
+    :param entity: Entity of the metric to query
     :param start_time: Start of the interval
     :param end_time: End of the interval
     :param interval_max: TODO: Document. Leave on 0 for now"""
-    db_addr = await resolve(conn, {"service": "time_series_db"})
+    db_entity = await resolve(conn, {"service": "time_series_db"})
 
-    if not db_addr:
+    if not db_entity:
         raise RuntimeError("Time-series Database is not online!")
 
-    db_addr = str(db_addr[0])
+    db_entity = str(db_entity[0])
 
     handle = await conn.request(
-        db_addr,
-        HistoryReqV1(addr, start_time, end_time, interval_max, "aggregate").to_capnp(),
+        db_entity,
+        HistoryReqV1(
+            entity, start_time, end_time, interval_max, "aggregate"
+        ).to_capnp(),
     )
 
     response = await handle()
@@ -48,28 +49,28 @@ async def get_aggregate(
 
 async def get_timeline(
     conn: Connection,
-    addr: str,
+    entity: str,
     start_time: int,
     end_time: int,
     interval_max: int = 0,
 ) -> History:
     """Get a timeline of historic metric data over the time interval [start_time, end_time]
 
-    :param addr: Address of the metric to query
+    :param entity: Entity of the metric to query
     :param start_time: Start of the interval
     :param end_time: End of the interval
     :param interval_max: TODO: Document. Leave on 0 for now"""
-    db_addr = await resolve(conn, {"service": "time_series_db"})
+    db_entity = await resolve(conn, {"service": "time_series_db"})
 
-    if not db_addr:
+    if not db_entity:
         raise RuntimeError("Time-series Database is not online!")
 
-    db_addr = str(db_addr[0])
+    db_entity = str(db_entity[0])
 
     handle = await conn.request(
-        db_addr,
+        db_entity,
         HistoryReqV1(
-            addr, start_time, end_time, interval_max, "flexTimeline"
+            entity, start_time, end_time, interval_max, "flexTimeline"
         ).to_capnp(),
     )
     response = await handle()

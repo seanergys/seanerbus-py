@@ -7,13 +7,13 @@ from ..msg import ResolveResV1, ResolveReqV1
 from ..msg import RegisterResolveReqV1
 from ..msg import UnregisterResolveReqV1
 from ..msg import msg_capnp
-from ..client import MsgHandle, OneShotMsgHandle
+from ..client import OneShotMsgHandle
 
 from ..client import Connection
 
 
 async def resolve(conn: Connection, name: dict[str, str]) -> list[str]:
-    """Use the naming service to translate a Name to an Address"""
+    """Use the naming service to translate a Name to an Entity"""
 
     handle: OneShotMsgHandle = await conn.request(
         "00000000-0000-0000-0000-0000010ca105", ResolveReqV1(name).to_capnp()
@@ -21,14 +21,14 @@ async def resolve(conn: Connection, name: dict[str, str]) -> list[str]:
     res = await handle()
     msg = ResolveResV1.from_capnp(res)
 
-    return msg.addrs
+    return msg.entities
 
 
-async def reverse_resolve(conn: Connection, addr: str) -> dict[str, str]:
-    """Uses the naming service to translate a Address back to a Name"""
+async def reverse_resolve(conn: Connection, entity: str) -> dict[str, str]:
+    """Uses the naming service to translate a Entity back to a Name"""
 
     handle: OneShotMsgHandle = await conn.request(
-        "00000000-0000-0000-0000-0000010ca105", ReverseResolveReqV1(addr).to_capnp()
+        "00000000-0000-0000-0000-0000010ca105", ReverseResolveReqV1(entity).to_capnp()
     )
     res = await handle()
     msg = ReverseResolveResV1.from_capnp(res)
@@ -36,11 +36,11 @@ async def reverse_resolve(conn: Connection, addr: str) -> dict[str, str]:
     return msg.name
 
 
-async def register_resolve(conn: Connection, name: dict[str, str], addr: str):
-    """Registers a name for the given address with the naming service"""
+async def register_resolve(conn: Connection, name: dict[str, str], entity: str):
+    """Registers a name for the given entity with the naming service"""
     handle: OneShotMsgHandle = await conn.request(
         "00000000-0000-0000-0000-0000010ca105",
-        RegisterResolveReqV1(name, addr).to_capnp(),
+        RegisterResolveReqV1(name, entity).to_capnp(),
     )
     res = await handle()
     msg = ErrorResV1.from_capnp(res)
@@ -49,11 +49,12 @@ async def register_resolve(conn: Connection, name: dict[str, str], addr: str):
         raise RuntimeError("Failed to register a name resolution: " + msg.what)
 
 
-async def unregister_resolve(conn: Connection, addr: str):
-    """Unregisters an address from the naming service"""
+async def unregister_resolve(conn: Connection, entity: str):
+    """Unregisters an entity from the naming service"""
 
     handle: OneShotMsgHandle = await conn.request(
-        "00000000-0000-0000-0000-0000010ca105", UnregisterResolveReqV1(addr).to_capnp()
+        "00000000-0000-0000-0000-0000010ca105",
+        UnregisterResolveReqV1(entity).to_capnp(),
     )
     res = await handle()
     msg = ErrorResV1.from_capnp(res)
