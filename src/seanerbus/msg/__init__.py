@@ -194,16 +194,17 @@ class ResolveReqV1:
 class ResolveResV1:
     """A response to a resolve request payload"""
 
-    def __init__(self, entities: list[str]):
+    def __init__(self, entities: list[str], resolved_terms: list[dict[str, str]]):
         """Creates a ResolveResV1 from a list of entityes
 
         :param uuids: The list of entityes to include in the response"""
         self.entities: list[str] = entities
+        self.resolved_terms: list[dict[str, str]] = resolved_terms
 
     @staticmethod
     def from_capnp(msg: Message):
         """Decodes the given message (as returned by Connection.read_msg() as a ResolveResV1"""
-        res = ResolveResV1([])
+        res = ResolveResV1([], [])
 
         if msg.payload_type_as_int() != msg_capnp.MessageTypes.resolveResV1:
             raise RuntimeError(
@@ -214,6 +215,11 @@ class ResolveResV1:
             for i in req.entities:
                 uuid_num = (i.upper << 64) + i.lower
                 res.entities.append(str(UUID(int=uuid_num)))
+            for num, terms_for_entity in enumerate(req.resolvedTerms):
+                cur_terms = {}
+                for term in terms_for_entity:
+                    cur_terms[term.key] = term.value
+                res.resolved_terms.append(cur_terms)
         return res
 
     def to_capnp(self) -> tuple[int, bytes]:
@@ -226,19 +232,31 @@ class ResolveResV1:
             (upper, lower) = uuid_to_u64_pair(uuid_in)
             msg.entities[num].upper = upper
             msg.entities[num].lower = lower
+
+        msg_terms_for_entity = msg.init("resolvedTerms", len(self.resolved_terms))
+        for num, terms_for_entity in enumerate(self.resolved_terms):
+            list_of_kvs = list(terms_for_entity.items())
+
+            msg_terms = msg_terms_for_entity.init(num, len(list_of_kvs))
+            for num, element in enumerate(list_of_kvs):
+                msg_terms[num].key = element[0]
+                msg_terms[num].value = element[1]
         return (msg_capnp.MessageTypes.resolveResV1, msg.to_bytes())
 
     def __eq__(self, value: object, /) -> bool:
         if isinstance(value, ResolveResV1):
-            return self.entities == value.entities
+            return (
+                self.entities == value.entities
+                and self.resolved_terms == value.resolved_terms
+            )
         return False
 
     def to_dict(self) -> dict:
-        return {"entities": self.entities}
+        return {"entities": self.entities, "resolved_terms": self.resolved_terms}
 
     @staticmethod
     def from_dict(in_dict) -> "ResolveResV1":
-        return ResolveResV1(in_dict["entities"])
+        return ResolveResV1(in_dict["entities"], in_dict["resolved_terms"])
 
 
 class ReverseResolveReqV1:
