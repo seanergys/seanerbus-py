@@ -70,17 +70,18 @@ def test_ResolveReqV1():
 
 
 def test_ResolveResV1_error():
-    tv = ResolveResV1(["foo"])
+    tv = ResolveResV1(["foo"], [{"bar": "1"}])
     assert tv.entities == ["foo"]
-
+    assert tv.resolved_terms == [{"bar": "1"}]
     to_from_dict(tv)
     with pytest.raises(ValueError):
         to_from_capnp(tv)
 
 
 def test_ResolveResV1_empty():
-    tv = ResolveResV1([])
+    tv = ResolveResV1([], [])
     assert tv.entities == []
+    assert tv.resolved_terms == []
 
     to_from_dict(tv)
     to_from_capnp(tv)
@@ -88,8 +89,13 @@ def test_ResolveResV1_empty():
 
 def test_ResolveResV1():
     tv = ResolveResV1(
-        ["c0ea7f8d-ba35-4a10-85ba-8d2f45848c93", "3d8a1ee2-9131-40fe-9691-af42d86cd889"]
+        [
+            "c0ea7f8d-ba35-4a10-85ba-8d2f45848c93",
+            "3d8a1ee2-9131-40fe-9691-af42d86cd889",
+        ],
+        [{"cpu": "0"}, {"cpu": "1"}],
     )
+
     assert tv.entities == [
         "c0ea7f8d-ba35-4a10-85ba-8d2f45848c93",
         "3d8a1ee2-9131-40fe-9691-af42d86cd889",
