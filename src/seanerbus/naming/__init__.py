@@ -12,8 +12,19 @@ from ..client import OneShotMsgHandle
 from ..client import Connection
 
 
-async def resolve(conn: Connection, name: dict[str, str]) -> list[str]:
-    """Use the naming service to translate a Name to an Entity"""
+async def resolve(conn: Connection, name: dict[str, str]) -> dict:
+    """Use the naming service to translate a Name to an Entity
+
+    Returns a dictionary with entries 'entities' and 'resolved_terms'.
+    The list result['entities'] contains the resolved entities.
+    The list result['resolved_terms'] contains the resolved terms of the name look-up wildcards.
+
+    If resolve(conn, {"node" : "4", "cpu" : "*"}) is looked up, then possibly a dict with:
+
+    result = {
+        "entities" = [ "e4d6f4e4-0e6b-4572-9586-ad297c01d482", "8ce715f0-069d-42b0-bbe8-6e0d6000a4e2"],
+        "resolved_terms" = [{"cpu" : "0"}, {"cpu" : "1"}]
+    }"""
 
     handle: OneShotMsgHandle = await conn.request(
         "00000000-0000-0000-0000-0000010ca105", ResolveReqV1(name).to_capnp()
@@ -21,7 +32,7 @@ async def resolve(conn: Connection, name: dict[str, str]) -> list[str]:
     res = await handle()
     msg = ResolveResV1.from_capnp(res)
 
-    return msg.entities
+    return msg.to_dict()
 
 
 async def reverse_resolve(conn: Connection, entity: str) -> dict[str, str]:
