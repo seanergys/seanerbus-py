@@ -65,7 +65,7 @@ async def get_timeline(
     if not db_entity:
         raise RuntimeError("Time-series Database is not online!")
 
-    db_entity = str(db_entity[0])
+    db_entity = str(db_entity["entities"][0])
 
     handle = await conn.request(
         db_entity,
