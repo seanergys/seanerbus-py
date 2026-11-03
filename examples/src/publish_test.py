@@ -16,7 +16,7 @@ import sys
 async def main():
     # Connect to the SeanerBUS
     c = seanerbus.client.Connection(
-        "demobus://localhost:5398", "demobus://localhost:5398"
+        "seanerbroker://localhost:5398", "seanerbroker://localhost:5398"
     )
 
     value = 0.0
